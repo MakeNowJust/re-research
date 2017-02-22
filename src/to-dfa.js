@@ -11,17 +11,17 @@ const toDFA = (newSymbol, {name, delta: delta1, start: start1, finish: finish1})
   const delta = new Map
   const finish = new Map
 
-  const collect = (q, visited, done, trans) => {
+  const follow = (q, visited, done, trans) => {
     if (visited.has(q)) return
     visited.add(q)
 
-    if (finish1.has(q)) {
+    if (finish1.has(q))
       for (const name of finish1.get(q)) done.add(name)
-    }
+
 
     for (const [c, tos1] of delta1.get(q) || new Map) {
       if (c === EPSILON) {
-        for (const to of tos1) collect(to, visited, done, trans)
+        for (const to of tos1) follow(to, visited, done, trans)
       } else {
         if (!trans.has(c)) trans.set(c, new Set)
         const tos = trans.get(c)
@@ -38,7 +38,7 @@ const toDFA = (newSymbol, {name, delta: delta1, start: start1, finish: finish1})
 
     const visited = new Set
     const done = new Set
-    for (const q of qs) collect(q, visited, done, trans)
+    for (const q of qs) follow(q, visited, done, trans)
 
     if (done.size > 0) finish.set(key, done)
 

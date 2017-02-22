@@ -8,6 +8,7 @@ module.exports = {
   extends: `eslint:recommended`,
   rules: {
     [`linebreak-style`]: [`error`, `unix`],
+    [`no-trailing-spaces`]: `error`,
     curly: [`error`, `multi-or-nest`, `consistent`],
     indent: [`error`, 2, {SwitchCase: 1}],
     quotes: [`error`, `backtick`],
