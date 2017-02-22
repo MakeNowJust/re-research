@@ -4,10 +4,10 @@ const {EPSILON} = require(`./consts`)
 const symbolDescription = require(`./util/symbol-description`)
 const newSymbolFactory = require(`./util/new-symbol`)
 
-// toNFA converts *root* node of Regular Expression to NFA.
+// `toNFA` converts *root* node of Regular Expression to NFA.
 //
 // NOTE: This function cannot convert look-ahead/behind directly.
-const toNFA = (name, root, sigma) => {
+const toNFA = (name, sigma, root) => {
   const newSymbol = newSymbolFactory()
 
   const delta = new Map
@@ -21,8 +21,8 @@ const toNFA = (name, root, sigma) => {
   const cons = (next, node) => {
     switch (node.type) {
       case `alt`: {
-        const current = cons(next, node.nodes[0])
-        node.nodes.slice(1).forEach(node => defDelta(current, EPSILON, cons(next, node)))
+        const current = newSymbol(`alt`)
+        node.nodes.forEach(node => defDelta(current, EPSILON, cons(next, node)))
         return current
       }
 
@@ -30,8 +30,10 @@ const toNFA = (name, root, sigma) => {
         return node.nodes.reduceRight(cons, next)
 
       case `optional`: {
-        const current = cons(next, node.node)
-        defDelta(current, EPSILON, next)
+        const next2 = newSymbol(`optional`)
+        const current = cons(next2, node.node)
+        defDelta(current, EPSILON, next2)
+        defDelta(next2, EPSILON, next)
         return current
       }
 
@@ -43,8 +45,10 @@ const toNFA = (name, root, sigma) => {
       }
 
       case `some`: {
-        const current = cons(next, node.node)
-        defDelta(next, EPSILON, current)
+        const next2 = newSymbol(`some`)
+        const current = cons(next2, node.node)
+        defDelta(next2, EPSILON, current)
+        defDelta(next2, EPSILON, next)
         return current
       }
 
