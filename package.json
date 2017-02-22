@@ -1,0 +1,16 @@
+{
+  "private": true,
+  "name": "@MakeNowJust/re",
+  "version": "1.0.0",
+  "description": "Regular Expression Utilities for my experiments",
+  "main": "index.js",
+  "repository": "MakeNowJust/cybozu-labo-re",
+  "author": "TSUYUSATO Kitsune <make.just.on@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^3.15.0"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  }
+}
