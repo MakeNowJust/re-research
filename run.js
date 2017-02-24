@@ -26,11 +26,11 @@ util.inspect.defaultOptions.depth = null
 
 const dot = (name, graph) => {
   console.log(`create output/${name}.png`)
-  execSync(`dot -Tpng -ooutput/${name}.png`, {input: toDOT(graph/*, x => symbolDescription(x)*/)})
+  execSync(`dot -Tpng -ooutput/${name}.png`, {input: toDOT(graph)})
 }
 
 const text = `helloworld`
-const pattern = `.+(?!h)(?<=world)`
+const pattern = `.((?!h).)+(?<=world)`
 
 console.log(`text:`, text)
 console.log(`pattern:`, pattern)
@@ -69,7 +69,6 @@ const aheads = aheadDFA ? runNFA(input.concat().reverse(), aheadDFA).reverse() :
 const behinds = behindDFA ? runNFA(input, behindDFA) : []
 
 const newInput = input.map((c, i) => dfa.newChar(c, new Set(concat(aheads[i], behinds[i]))))
-console.log(newInput)
 
 const result = runNFA(newInput, dfa)
 console.log(result.filter(s => s.size > 0).length > 0 ? `match` : `not match`)
