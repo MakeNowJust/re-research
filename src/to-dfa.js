@@ -3,10 +3,11 @@
 const {EPSILON} = require(`./consts`)
 const symbolListKeyFactory = require(`./util/symbol-list-key`)
 const symbolDescription = require(`./util/symbol-description`)
+const newSymbolFactory = require(`./util/new-symbol`)
 
 // `toDFA` converts from NFA to DFA.
-const toDFA = (newSymbol, {name, delta: delta1, start: start1, finish: finish1}) => {
-  const symbolListKey = symbolListKeyFactory(newSymbol, symbolDescription(name))
+const toDFA = ({name, delta: delta1, start: start1, finish: finish1}) => {
+  const symbolListKey = symbolListKeyFactory(newSymbolFactory(), symbolDescription(name))
 
   const delta = new Map
   const finish = new Map
