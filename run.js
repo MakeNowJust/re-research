@@ -12,7 +12,7 @@ const appendDotStar = require(`./src/append-dot-star`)
 const concat = require(`./src/util/generator-concat`)
 const crossNFA = require(`./src/cross-nfa`)
 const extractCondition = require(`./src/extract-condition`)
-const negativeNFA = require(`./src/negative-nfa`)
+const negativeDFA = require(`./src/negative-dfa`)
 const newSymbolFactory = require(`./src/util/new-symbol`)
 const removeUnreachable = require(`./src/remove-unreachable`)
 const reverseNFA = require(`./src/reverse-nfa`)
@@ -31,7 +31,7 @@ const dot = (name, graph) => {
 }
 
 const text = `helloworld`
-const pattern = `(?!h).*`
+const pattern = `.+(?!h)(?<=world)`
 
 console.log(`text:`, text)
 console.log(`pattern:`, pattern)
@@ -52,21 +52,17 @@ dot(`dfa`, dfa)
 
 const newSymbolAhead = newSymbolFactory()
 const aheadNFA = aheadNFAtmp && aheadNFAtmp
-  .map(({nfa, positive}) => positive ? nfa : removeUnreachable(sigma, negativeNFA(toDFA(appendDotStar(sigma, nfa)))))
+  .map(({nfa, positive}) => positive ? appendDotStar(sigma, nfa) : removeUnreachable(sigma, negativeDFA(toDFA(appendDotStar(sigma, nfa)))))
   .reduce((cross, nfa) => removeUnreachable(sigma, crossNFA(newSymbolAhead, sigma, cross, nfa)))
 const aheadDFA = aheadNFA ? toDFA(aheadNFA) : null
 const newSymbolBehind = newSymbolFactory()
 const behindNFA = behindNFAtmp && behindNFAtmp
-  .map(({nfa, positive}) => positive ? nfa : removeUnreachable(sigma, negativeNFA(toDFA(appendDotStar(sigma, nfa)))))
+  .map(({nfa, positive}) => positive ? appendDotStar(sigma, nfa) : removeUnreachable(sigma, negativeDFA(toDFA(appendDotStar(sigma, nfa)))))
   .reduce((cross, nfa) => removeUnreachable(sigma, crossNFA(newSymbolBehind, sigma, cross, nfa)))
 const behindDFA = behindNFA ? toDFA(behindNFA) : null
 
-if (aheadDFA) {
-  dot(`ahead`, aheadDFA)
-}
-if (behindNFA) {
-  dot(`behind`, behindDFA)
-}
+if (aheadDFA) dot(`ahead`, aheadDFA)
+if (behindDFA) dot(`behind`, behindDFA)
 
 const input = text.split(``).concat(sigma.end)
 
@@ -74,6 +70,7 @@ const aheads = aheadDFA ? runNFA(input.concat().reverse(), aheadDFA).reverse() :
 const behinds = behindDFA ? runNFA(input, behindDFA) : []
 
 const newInput = input.map((c, i) => dfa.newChar(c, new Set(concat(aheads[i], behinds[i]))))
+console.log(newInput)
 
 const result = runNFA(newInput, dfa)
 console.log(result.filter(s => s.size > 0).length > 0 ? `match` : `not match`)
