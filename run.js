@@ -9,10 +9,10 @@ const util = require(`util`)
 
 const Parser = require(`./src/parser`)
 const appendDotStar = require(`./src/append-dot-star`)
-// const collectSigma = require(`./src/collect-sigma`)
 const concat = require(`./src/util/generator-concat`)
 const crossNFA = require(`./src/cross-nfa`)
 const extractCondition = require(`./src/extract-condition`)
+const negativeNFA = require(`./src/negative-nfa`)
 const newSymbolFactory = require(`./src/util/new-symbol`)
 const removeUnreachable = require(`./src/remove-unreachable`)
 const reverseNFA = require(`./src/reverse-nfa`)
@@ -27,11 +27,11 @@ util.inspect.defaultOptions.depth = null
 
 const dot = (name, graph) => {
   console.log(`create output/${name}.png`)
-  execSync(`dot -Tpng -ooutput/${name}.png`, {input: toDOT(graph, x => symbolDescription(x))})
+  execSync(`dot -Tpng -ooutput/${name}.png`, {input: toDOT(graph/*, x => symbolDescription(x)*/)})
 }
 
 const text = `helloworld`
-const pattern = `(?=hello).*(?<=world)`
+const pattern = `(?!h).*`
 
 console.log(`text:`, text)
 console.log(`pattern:`, pattern)
@@ -41,34 +41,31 @@ const sigma = new Set(text)
 const {root, look} = extractCondition(rawRoot)
 const nfa = toNFA(Symbol(`main`), sigma, root)
 
-const newSymbolAhead = newSymbolFactory()
 const aheadNFAtmp = look.ahead.size > 0 && Array.from(look.ahead)
-  .map(([name, re]) => toNFA(name, sigma, re.node))
-  .map(reverseNFA)
-const newSymbolBehind = newSymbolFactory()
+  .map(([name, {node, positive}]) => ({nfa: reverseNFA(toNFA(name, sigma, node)), positive}))
 const behindNFAtmp = look.behind.size > 0 && Array.from(look.behind)
-  .map(([name, re]) => toNFA(name, sigma, re.node))
+  .map(([name, {node, positive}]) => ({nfa: toNFA(name, sigma, node), positive}))
 
 dot(`nfa`, nfa)
 const dfa = toDFAForRemain(newSymbolFactory(), sigma, look, nfa)
 dot(`dfa`, dfa)
 
+const newSymbolAhead = newSymbolFactory()
 const aheadNFA = aheadNFAtmp && aheadNFAtmp
-  .map(nfa => appendDotStar(sigma, nfa))
+  .map(({nfa, positive}) => positive ? nfa : removeUnreachable(sigma, negativeNFA(toDFA(appendDotStar(sigma, nfa)))))
   .reduce((cross, nfa) => removeUnreachable(sigma, crossNFA(newSymbolAhead, sigma, cross, nfa)))
-const aheadDFA = aheadNFA ? toDFA(newSymbolAhead, aheadNFA) : null
+const aheadDFA = aheadNFA ? toDFA(aheadNFA) : null
+const newSymbolBehind = newSymbolFactory()
 const behindNFA = behindNFAtmp && behindNFAtmp
-  .map(nfa => appendDotStar(sigma, nfa))
+  .map(({nfa, positive}) => positive ? nfa : removeUnreachable(sigma, negativeNFA(toDFA(appendDotStar(sigma, nfa)))))
   .reduce((cross, nfa) => removeUnreachable(sigma, crossNFA(newSymbolBehind, sigma, cross, nfa)))
-const behindDFA = behindNFA ? toDFA(newSymbolBehind, behindNFA) : null
+const behindDFA = behindNFA ? toDFA(behindNFA) : null
 
 if (aheadDFA) {
-  dot(`ahead-nfa`, aheadNFA)
-  dot(`ahead-dfa`, aheadDFA)
+  dot(`ahead`, aheadDFA)
 }
 if (behindNFA) {
-  dot(`behind-nfa`, behindNFA)
-  dot(`behind-dfa`, behindDFA)
+  dot(`behind`, behindDFA)
 }
 
 const input = text.split(``).concat(sigma.end)
