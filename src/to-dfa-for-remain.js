@@ -64,16 +64,16 @@ const toDFAForRemain = (newSymbol, sigma, look, nfa) => {
 
     for (const conds of lookPowSet) {
       const qs2 = new Set
-      for (const [q2, conds2] of next) {
+      for (const [q2, conds2] of next)
         if (subsetEq(conds2, conds)) qs2.add(q2)
-      }
+
 
       for (const c of sigma) {
         const qs3 = new Set
         for (const q2 of qs2) {
-          if (delta1.has(q2) && delta1.get(q2).has(c)) {
+          if (delta1.has(q2) && delta1.get(q2).has(c))
             for (const q3 of delta1.get(q2).get(c)) qs3.add(q3)
-          }
+
         }
         if (qs3.size > 0)
           trans.set(newChar(c, conds), new Set([cons(qs3)]))

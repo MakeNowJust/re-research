@@ -1,16 +1,14 @@
 'use strict'
 
-const {EPSILON} = require(`./consts`)
-
 const negativeNFA = ({name, delta, start, finish: finish1}) => {
   const finish = new Map()
 
   for (const [from, trans] of delta) {
     if (!finish1.has(from) && !finish.has(from)) finish.set(from, new Set([name]))
-    for (const [c, tos] of trans) {
-      for (const to of tos) {
+    for (const [, tos] of trans) {
+      for (const to of tos)
         if (!finish1.has(to) && !finish.has(from)) finish.set(to, new Set([name]))
-      }
+
     }
   }
 

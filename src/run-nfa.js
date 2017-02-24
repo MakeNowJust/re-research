@@ -10,12 +10,12 @@ const runNFA = (string, {delta, start, finish}) => {
     const trans = delta.get(q)
     const c = string[offset]
 
-    if (trans.has(c)) {
+    if (trans.has(c))
       for (const q of trans.get(c)) next.push({q, offset: offset + 1})
-    }
-    if (trans.has(EPSILON)) {
+
+    if (trans.has(EPSILON))
       for (const q of trans.get(EPSILON)) next.push({q, offset})
-    }
+
   }
 
   const result = []
