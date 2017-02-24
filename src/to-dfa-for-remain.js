@@ -1,15 +1,19 @@
 'use strict'
 
 const {EPSILON} = require(`./consts`)
+const appendEnd = require(`./append-end`)
+const concat = require(`./util/generator-concat`)
 const pow = require(`./util/set-pow`)
 const subsetEq = require(`./util/set-subset-eq`)
-const symbolListKeyFactory = require(`./util/symbol-list-key`)
 const symbolDescription = require(`./util/symbol-description`)
+const symbolListKeyFactory = require(`./util/symbol-list-key`)
 
-const toDFAForRemain = (newSymbol, sigma, look, {name, delta: delta1, start: start1, finish: finish1}) => {
+const toDFAForRemain = (newSymbol, sigma, look, nfa) => {
+  const {name, delta: delta1, start: start1, finish: finish1} = appendEnd(sigma, nfa)
+
   const symbolListKey = symbolListKeyFactory(newSymbol, symbolDescription(name))
 
-  const lookSet = new Set([...look.ahead.keys(), ...look.behind.keys()])
+  const lookSet = new Set(concat(look.ahead.keys(), look.behind.keys()))
   const lookPowSet = pow(lookSet)
 
   const newCharKey = symbolListKeyFactory(Symbol, ``)
@@ -23,53 +27,56 @@ const toDFAForRemain = (newSymbol, sigma, look, {name, delta: delta1, start: sta
     for (const conds of lookPowSet) newChar(c, conds)
 
   const delta = new Map
-  const finish = new Map
 
-  const follow = (q, visiting, qs, conds, next) => {
+  const follow = (q, visiting, conds, next) => {
     if (visiting.has(q)) return
     visiting.add(q)
 
-    if (finish1.has(q)) qs.add(q)
-
-    for (const [c, tos1] of delta1.get(q) || new Map) {
-      if (c === EPSILON)
-        for (const q1 of tos1) follow(q1, visiting, qs, conds, next)
-      else if (lookSet.has(c))
-        for (const q1 of tos1) follow(q1, visiting, new Set(conds.size === 0 ? [] : qs), new Set(conds).add(c), next)
-      else next.push([c, conds, new Set([...(conds.size === 0 ? [] : qs), ...tos1])])
+    if (delta1.has(q)) {
+      let pushed = false
+      for (const [c1, tos1] of delta1.get(q)) {
+        if (c1 === EPSILON) {
+          for (const q1 of tos1) follow(q1, visiting, conds, next)
+        } else if (lookSet.has(c1)) {
+          for (const q1 of tos1) follow(q1, visiting, new Set(conds).add(c1), next)
+        } else {
+          if (!pushed) {
+            next.push([q, conds])
+            pushed = true
+          }
+        }
+      }
     }
 
     visiting.delete(q)
   }
 
-  const cons = (qs) => {
-    const next = []
-    const visiting = new Set
-    const conds = new Set
-    for (const q of qs) follow(q, visiting, qs, conds, next)
-
+  const cons = qs => {
     const key = symbolListKey(qs)
     if (delta.has(key)) return key
     const trans = new Map
     delta.set(key, trans)
 
-    const done = new Set
-    for (const q of qs)
-      for (const name of finish1.get(q) || []) done.add(name)
-    if (done.size > 0) finish.set(key, done)
+    const next = []
+    const visiting = new Set
+    const conds = new Set
+    for (const q of qs) follow(q, visiting, conds, next)
 
-    for (const c of sigma) {
-      for (const conds of lookPowSet) {
-        const qs2 = new Set
-        let found = false
-        for (const [c3, conds3, tos3] of next) {
-          if (c === c3 && subsetEq(conds3, conds)) {
-            found = true
-            for (const q of tos3) qs2.add(q)
+    for (const conds of lookPowSet) {
+      const qs2 = new Set
+      for (const [q2, conds2] of next) {
+        if (subsetEq(conds2, conds)) qs2.add(q2)
+      }
+
+      for (const c of sigma) {
+        const qs3 = new Set
+        for (const q2 of qs2) {
+          if (delta1.has(q2) && delta1.get(q2).has(c)) {
+            for (const q3 of delta1.get(q2).get(c)) qs3.add(q3)
           }
         }
-        if (found && qs2.size !== 0)
-          trans.set(newChar(c, conds), new Set([cons(qs2)]))
+        if (qs3.size > 0)
+          trans.set(newChar(c, conds), new Set([cons(qs3)]))
       }
     }
 
@@ -77,6 +84,8 @@ const toDFAForRemain = (newSymbol, sigma, look, {name, delta: delta1, start: sta
   }
 
   const start = cons(new Set([start1]))
+  // finish1.keys()'s length is `1` because it is processed by `appendEnd`.
+  const finish = new Map([[symbolListKey(new Set(finish1.keys())), new Set([name])]])
 
   return {name, delta, start, finish, newChar}
 }

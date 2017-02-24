@@ -18,7 +18,6 @@ const toDFA = (newSymbol, {name, delta: delta1, start: start1, finish: finish1})
     if (finish1.has(q))
       for (const name of finish1.get(q)) done.add(name)
 
-
     for (const [c, tos1] of delta1.get(q) || new Map) {
       if (c === EPSILON) {
         for (const to of tos1) follow(to, visited, done, trans)

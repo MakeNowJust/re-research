@@ -1,28 +1,34 @@
 'use strict'
 
 const {EPSILON} = require(`./consts`)
-const mapGet = require(`./util/map-get`)
 
 // runNFA runs NFA matching.
 const runNFA = (string, {delta, start, finish}) => {
-  const step = (q, offset, nexts) => {
-    for (const q2 of mapGet(delta, q, string[offset]) || [])
-      nexts.push({q: q2, offset: offset + 1})
-    for (const q2 of mapGet(delta, q, EPSILON) || [])
-      nexts.push({q: q2, offset})
+  const step = (q, offset, next) => {
+    if (!delta.has(q)) return
+
+    const trans = delta.get(q)
+    const c = string[offset]
+
+    if (trans.has(c)) {
+      for (const q of trans.get(c)) next.push({q, offset: offset + 1})
+    }
+    if (trans.has(EPSILON)) {
+      for (const q of trans.get(EPSILON)) next.push({q, offset})
+    }
   }
 
   const result = []
   let threads = [{q: start, offset: 0}]
   while (threads.length > 0) {
-    const nexts = []
+    const next = []
     for (const {q, offset} of threads) {
       result[offset] = result[offset] || new Set
       if (finish.has(q))
         for (const name of finish.get(q)) result[offset].add(name)
-      step(q, offset, nexts)
+      step(q, offset, next)
     }
-    threads = nexts
+    threads = next
   }
 
   return result

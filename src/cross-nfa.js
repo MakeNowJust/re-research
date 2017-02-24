@@ -40,11 +40,10 @@ const crossNFA = (newSymbol, sigma, nfa1, nfa2) => {
   const defDelta = (from, c, tos1, tos2) => {
     if (!tos1 && !tos2) return
 
-    const tos = []
+    const tos = new Set
     for (const to1 of tos1 || [fail1]) {
       for (const to2 of tos2 || [fail2])
-        tos.push(symbolListKey([to1, to2]))
-
+        tos.add(symbolListKey([to1, to2]))
     }
     delta.get(from).set(c, tos)
   }

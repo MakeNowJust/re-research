@@ -3,6 +3,7 @@
 const {EPSILON} = require(`./consts`)
 const symbolDescription = require(`./util/symbol-description`)
 const newSymbolFactory = require(`./util/new-symbol`)
+const deltaFactory = require(`./util/delta`)
 
 // `toNFA` converts *root* node of Regular Expression to NFA.
 //
@@ -10,13 +11,7 @@ const newSymbolFactory = require(`./util/new-symbol`)
 const toNFA = (name, sigma, root) => {
   const newSymbol = newSymbolFactory()
 
-  const delta = new Map
-  const defDelta = (from, value, to) => {
-    if (!delta.has(from)) delta.set(from, new Map)
-    const values = delta.get(from)
-    if (!values.has(value)) values.set(value, new Set)
-    values.get(value).add(to)
-  }
+  const {delta, defDelta} = deltaFactory()
 
   const cons = (next, node) => {
     switch (node.type) {
@@ -57,7 +52,7 @@ const toNFA = (name, sigma, root) => {
 
       case `any`: {
         const current = newSymbol(`any`)
-        sigma.forEach(value => defDelta(current, value, next))
+        sigma.forEach(c => defDelta(current, c, next))
         return current
       }
 

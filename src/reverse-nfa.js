@@ -2,16 +2,11 @@
 
 const {EPSILON} = require(`./consts`)
 const symbolDescription = require(`./util/symbol-description`)
+const deltaFactory = require(`./util/delta`)
 
 const reverseNFA = ({name, delta: delta1, start: start1, finish: finish1}) => {
   const start = Symbol(`${symbolDescription(name)}#reverse`)
-  const delta = new Map
-  const defDelta = (from, value, to) => {
-    if (!delta.has(from)) delta.set(from, new Map)
-    const values = delta.get(from)
-    if (!values.has(value)) values.set(value, new Set)
-    values.get(value).add(to)
-  }
+  const {delta, defDelta} = deltaFactory()
 
   for (const [f] of finish1)
     defDelta(start, EPSILON, f)

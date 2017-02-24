@@ -9,7 +9,6 @@ const util = require(`util`)
 
 const Parser = require(`./src/parser`)
 const appendDotStar = require(`./src/append-dot-star`)
-const appendEnd = require(`./src/append-end`)
 // const collectSigma = require(`./src/collect-sigma`)
 const concat = require(`./src/util/generator-concat`)
 const crossNFA = require(`./src/cross-nfa`)
@@ -32,7 +31,7 @@ const dot = (name, graph) => {
 }
 
 const text = `helloworld`
-const pattern = `(?=h.*o).*(?<=w.*d)`
+const pattern = `(?=hello).*(?<=world)`
 
 console.log(`text:`, text)
 console.log(`pattern:`, pattern)
@@ -50,9 +49,8 @@ const newSymbolBehind = newSymbolFactory()
 const behindNFAtmp = look.behind.size > 0 && Array.from(look.behind)
   .map(([name, re]) => toNFA(name, sigma, re.node))
 
-let endNFA = appendEnd(sigma, nfa)
-dot(`nfa`, endNFA)
-const dfa = toDFAForRemain(newSymbolFactory(), sigma, look, endNFA)
+dot(`nfa`, nfa)
+const dfa = toDFAForRemain(newSymbolFactory(), sigma, look, nfa)
 dot(`dfa`, dfa)
 
 const aheadNFA = aheadNFAtmp && aheadNFAtmp
@@ -81,6 +79,4 @@ const behinds = behindDFA ? runNFA(input, behindDFA) : []
 const newInput = input.map((c, i) => dfa.newChar(c, new Set(concat(aheads[i], behinds[i]))))
 
 const result = runNFA(newInput, dfa)
-console.log(`match:`)
-for (const [i, set] of result.entries())
-  if (set.size !== 0) console.log([0, i - 1], text.slice(0, i - 1))
+console.log(result.filter(s => s.size > 0).length > 0 ? `match` : `not match`)
